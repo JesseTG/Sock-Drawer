@@ -30,14 +30,3 @@ Flask-DebugToolbar==0.10.1
 
 # REST API
 flask-restful
-
-# Twitter
-botometer
-
-# Algorithms
-torch>=0.4.1
-pytorch-ignite
-
-# Data
-libarchive
-pandas

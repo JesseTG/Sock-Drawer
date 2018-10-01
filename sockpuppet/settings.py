@@ -26,8 +26,6 @@ class Config(object):
     CACHE_REDIS_PORT = os.environ.get("SOCKPUPPET_REDIS_PORT", 6379)
     CACHE_REDIS_PASSWORD = os.environ.get("SOCKPUPPET_REDIS_PASSWORD")
     CACHE_REDIS_DB = os.environ.get("SOCKPUPPET_REDIS_DB", 0)
-    TRAINING_DATA_PATH = os.environ.get("SOCKPUPPET_TRAINING_DATA_PATH", os.path.expanduser("~/data"))
-    TRAINED_MODEL_PATH = os.environ.get("SOCKPUPPET_TRAINED_MODEL_PATH")
 
 
 class ProdConfig(Config):

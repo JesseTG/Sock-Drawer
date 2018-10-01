@@ -5,7 +5,6 @@ from flask import Flask, render_template
 from sockpuppet import commands, public, rest
 from sockpuppet.extensions import api, cache, db, debug_toolbar, migrate, webpack
 from sockpuppet.settings import ProdConfig
-from botometer import Botometer
 
 
 def create_app(config_object=ProdConfig):
@@ -22,7 +21,6 @@ def create_app(config_object=ProdConfig):
     register_errorhandlers(app)
     register_shellcontext(app)
     register_commands(app)
-    register_botometer(app)
     return app
 
 
@@ -78,14 +76,3 @@ def register_commands(app):
     app.cli.add_command(commands.lint)
     app.cli.add_command(commands.clean)
     app.cli.add_command(commands.urls)
-
-
-def register_botometer(app):
-    app.botometer = Botometer(
-        wait_on_ratelimit=True,
-        mashape_key=app.config['MASHAPE_KEY'],
-        consumer_key=app.config['TWITTER_CONSUMER_KEY'],
-        consumer_secret=app.config['TWITTER_CONSUMER_SECRET'],
-        access_token=app.config['TWITTER_ACCESS_TOKEN'],
-        access_token_secret=app.config['TWITTER_ACCESS_TOKEN_SECRET']
-    )
