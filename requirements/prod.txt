@@ -1,19 +1,12 @@
 # Everything needed in production
 
 # Flask
-Flask==0.12.2
+Flask==1.0.*
 MarkupSafe==1.0
-Werkzeug==0.14.1
+Werkzeug==0.14.*
 Jinja2==2.10
 itsdangerous==0.24
-click>=5.0
-
-# Database
-Flask-SQLAlchemy==2.3.2
-SQLAlchemy==1.2.6
-
-# Migrations
-Flask-Migrate==2.1.1
+click>=5.*
 
 # Deployment
 gunicorn>=19.1.1

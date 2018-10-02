@@ -3,7 +3,7 @@
 from flask import Flask, render_template
 
 from sockpuppet import commands, public, rest
-from sockpuppet.extensions import api, cache, db, debug_toolbar, migrate
+from sockpuppet.extensions import api, cache, debug_toolbar
 from sockpuppet.settings import ProdConfig
 
 
@@ -26,9 +26,7 @@ def register_extensions(app):
     """Register Flask extensions."""
     api.init_app(rest.poc.blueprint)
     cache.init_app(app)
-    db.init_app(app)
     debug_toolbar.init_app(app)
-    migrate.init_app(app, db)
 
     # TODO: Can I do this in a more idiomatic way?
     api.add_resource(rest.poc.ProofOfConcept, "/get")
@@ -60,7 +58,6 @@ def register_shellcontext(app):
     def shell_context():
         """Shell context objects."""
         return {
-            'db': db,
             'app': app
         }
 
