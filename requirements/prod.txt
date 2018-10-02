@@ -18,9 +18,6 @@ Flask-Migrate==2.1.1
 # Deployment
 gunicorn>=19.1.1
 
-# Webpack
-flask-webpack==0.1.0
-
 # Caching
 Flask-Caching>=1.0.0
 Redis

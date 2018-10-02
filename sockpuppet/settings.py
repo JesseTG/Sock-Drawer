@@ -14,7 +14,6 @@ class Config(object):
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     CACHE_TYPE = 'redis'  # Can be "memcached", "redis", etc.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    WEBPACK_MANIFEST_PATH = 'webpack/manifest.json'
     CACHE_DEFAULT_TIMEOUT = 3600 * 72  # 3 days, given in seconds
     TWITTER_CONSUMER_KEY = os.environ.get("TWITTER_CONSUMER_KEY")
     TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")

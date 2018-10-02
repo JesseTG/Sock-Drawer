@@ -3,7 +3,7 @@
 from flask import Flask, render_template
 
 from sockpuppet import commands, public, rest
-from sockpuppet.extensions import api, cache, db, debug_toolbar, migrate, webpack
+from sockpuppet.extensions import api, cache, db, debug_toolbar, migrate
 from sockpuppet.settings import ProdConfig
 
 
@@ -31,7 +31,6 @@ def register_extensions(app):
     db.init_app(app)
     debug_toolbar.init_app(app)
     migrate.init_app(app, db)
-    webpack.init_app(app)
 
     # TODO: Can I do this in a more idiomatic way?
     api.add_resource(rest.poc.ProofOfConcept, "/get")
