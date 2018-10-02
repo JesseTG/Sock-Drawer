@@ -7,7 +7,7 @@ import os.path
 class Config(object):
     """Base configuration."""
 
-    SECRET_KEY = os.environ.get('SOCKPUPPET_SECRET', 'secret-key')  # TODO: Change me
+    SECRET_KEY = os.environ.get('SOCKDRAWER_SECRET', 'secret-key')  # TODO: Change me
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     DEBUG_TB_ENABLED = False  # Disable Debug toolbar
@@ -18,12 +18,13 @@ class Config(object):
     TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")
     TWITTER_ACCESS_TOKEN = os.environ.get("TWITTER_ACCESS_TOKEN")
     TWITTER_ACCESS_TOKEN_SECRET = os.environ.get("TWITTER_ACCESS_TOKEN_SECRET")
-    MASHAPE_KEY = os.environ.get("MASHAPE_KEY")
-    API_KEY_PATH = os.environ.get("SOCKPUPPET_API_KEY_PATH")
-    CACHE_REDIS_HOST = os.environ.get("SOCKPUPPET_REDIS_HOST", "redis")
-    CACHE_REDIS_PORT = os.environ.get("SOCKPUPPET_REDIS_PORT", 6379)
-    CACHE_REDIS_PASSWORD = os.environ.get("SOCKPUPPET_REDIS_PASSWORD")
-    CACHE_REDIS_DB = os.environ.get("SOCKPUPPET_REDIS_DB", 0)
+    MASHAPE_KEY = os.environ.get("SOCKDRAWER_MASHAPE_KEY")
+    API_KEY_PATH = os.environ.get("SOCKDRAWER_API_KEY_PATH")
+    CACHE_REDIS_HOST = os.environ.get("SOCKDRAWER_REDIS_HOST", "redis")
+    CACHE_REDIS_PORT = os.environ.get("SOCKDRAWER_REDIS_PORT", 6379)
+    CACHE_REDIS_PASSWORD = os.environ.get("SOCKDRAWER_REDIS_PASSWORD")
+    CACHE_REDIS_DB = os.environ.get("SOCKDRAWER_REDIS_DB", 0)
+    SOCKPUPPET_HOST = os.environ.get("SOCKDRAWER_SOCKPUPPET_HOST")
 
 
 class ProdConfig(Config):
