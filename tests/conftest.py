@@ -6,14 +6,11 @@ import sys
 import time
 from typing import Callable, Dict, Sequence, Union
 
-import pandas
 import pytest
-from pandas import DataFrame
 from pytest import Item, Session
 from webtest import TestApp
 
 from sockpuppet.app import create_app
-from sockpuppet.database import db as _db
 from sockpuppet.settings import TestConfig
 
 from .marks import *
@@ -51,25 +48,3 @@ def app():
 def testapp(app):
     """A Webtest app."""
     return TestApp(app)
-
-
-@pytest.fixture
-def db(app):
-    """A database for the tests."""
-    _db.app = app
-    with app.app_context():
-        _db.create_all()
-
-    yield _db
-
-    # Explicitly close DB connection
-    _db.session.close()
-    _db.drop_all()
-
-
-@pytest.fixture
-def user(db):
-    """A user for the tests."""
-    user = UserFactory(password='myprecious')
-    db.session.commit()
-    return user
