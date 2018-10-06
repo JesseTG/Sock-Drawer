@@ -21,11 +21,10 @@ from flask import Flask, current_app, _app_ctx_stack
 
 
 class ZMQSocket(object):
-    # TODO: Allow multiple instances of this extension to be added
-    def __init__(self, app: Optional[Flask]=None):
-        # TODO: Pass in the context as an argument
+    def __init__(self, app: Optional[Flask]=None, context: Optional[Context]=None, prefix: str="ZMQ"):
+        self.prefix = prefix
         self.app = app
-        self.context = Context.instance()
+        self.context = context or Context.instance()
         if app is not None:
             self.init_app(app)
 
@@ -38,10 +37,10 @@ class ZMQSocket(object):
         app.teardown_appcontext(self.teardown)
 
     def _init_socket(self, app: Flask) -> Socket:
-        socket = self.context.socket(getattr(zmq, app.config['ZMQ_SOCKET_TYPE']))
+        socket = self.context.socket(getattr(zmq, app.config[f'{self.prefix}_SOCKET_TYPE']))
         # TODO: Allow either an int or a string here
 
-        socket.connect(app.config['ZMQ_CONNECT_ADDR'])
+        socket.connect(app.config[f'{self.prefix}_CONNECT_ADDR'])
         # TODO: Set sockopts here
         return socket
 
