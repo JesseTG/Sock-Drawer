@@ -2,6 +2,7 @@
 """Application configuration."""
 import os
 import os.path
+from simplejson import JSONEncoder
 
 
 class Config(object):
@@ -23,6 +24,23 @@ class Config(object):
     CACHE_REDIS_PASSWORD = os.environ.get("SOCKDRAWER_REDIS_PASSWORD")
     CACHE_REDIS_DB = os.environ.get("SOCKDRAWER_REDIS_DB", 0)
     SOCKPUPPET_HOST = os.environ.get("SOCKDRAWER_SOCKPUPPET_HOST")
+    ZMQ_SOCKET_TYPE = os.environ.get("SOCKPUPPET_ZMQ_SOCKET_TYPE", "REQ")
+    ZMQ_CONNECT_ADDR = os.environ.get("SOCKPUPPET_ZMQ_CONNECT_ADDR")
+    SOCKPUPPET_DIR = os.environ.get("SOCKPUPPET_DIR", os.path.expanduser("~/code/Sock-Puppet"))
+    SOCKPUPPET_MAIN_NAME = os.environ.get("SOCKPUPPET_MAIN_NAME", "main.py")
+    SOCKPUPPET_TRAINED_MODEL_PATH = os.environ.get(
+        "SOCKPUPPET_TRAINED_MODEL_PATH",
+        os.path.expanduser("~/data/trained/trained-25.pkl")
+    )
+
+    SOCKPUPPET_WORD_EMBEDDING_PATH = os.environ.get(
+        "SOCKPUPPET_WORD_EMBEDDING_PATH",
+        os.path.expanduser("~/data/glove/glove.twitter.27B.25d.txt")
+    )
+    RESTFUL_JSON = {
+        "cls": JSONEncoder,
+        "for_json": True
+    }
 
 
 class ProdConfig(Config):
@@ -45,3 +63,5 @@ class TestConfig(Config):
 
     TESTING = True
     DEBUG = True
+    ZMQ_CONNECT_ADDR = "ipc:///tmp/sockdrawer-sockpuppet-test"
+    SOCKPUPPET_HOST = "ipc:///tmp/sockdrawer-sockpuppet-test"
