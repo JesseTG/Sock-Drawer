@@ -3,7 +3,8 @@
 from flask import Flask, render_template
 
 from sockpuppet import commands, public, rest
-from sockpuppet.extensions import api, cache, debug_toolbar
+from sockpuppet.extensions import api, cache, zmq_socket
+from sockpuppet.api import v1
 from sockpuppet.settings import ProdConfig
 
 
@@ -17,6 +18,7 @@ def create_app(config_object=ProdConfig) -> Flask:
     app = Flask(__name__.split('.')[0])
     app.config.from_object(config_object)
     register_extensions(app)
+    register_resources(app)
     register_blueprints(app)
     register_errorhandlers(app)
     register_shellcontext(app)
@@ -30,12 +32,10 @@ def create_app(config_object=ProdConfig) -> Flask:
 
 def register_extensions(app: Flask):
     """Register Flask extensions."""
-    api.init_app(rest.poc.blueprint)
+    api.init_app(v1.blueprint)
     cache.init_app(app)
-    debug_toolbar.init_app(app)
+    zmq_socket.init_app(app)
 
-    # TODO: Can I do this in a more idiomatic way?
-    api.add_resource(rest.poc.ProofOfConcept, "/get")
 
 def register_resources(app: Flask):
     api.add_resource(v1.User, "/user")
@@ -43,9 +43,8 @@ def register_resources(app: Flask):
 
 def register_blueprints(app: Flask):
     """Register Flask blueprints."""
-    app.register_blueprint(public.views.blueprint)
-    app.register_blueprint(rest.poc.blueprint, url_prefix="/api/0")
-    return None
+
+    app.register_blueprint(v1.blueprint, url_prefix="/api/1")
 
 
 def register_errorhandlers(app: Flask):
