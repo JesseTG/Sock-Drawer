@@ -21,6 +21,10 @@ def create_app(config_object=ProdConfig) -> Flask:
     register_errorhandlers(app)
     register_shellcontext(app)
     register_commands(app)
+
+    if config_object.DEBUG:
+        app.logger.setLevel("INFO")
+
     return app
 
 
