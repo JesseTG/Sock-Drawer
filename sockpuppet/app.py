@@ -63,7 +63,10 @@ def register_shellcontext(app: Flask):
     def shell_context():
         """Shell context objects."""
         return {
-            'app': app
+            'app': app,
+            'api': api,
+            'cache': cache,
+            'zmq_socket': zmq_socket,
         }
 
     app.shell_context_processor(shell_context)
