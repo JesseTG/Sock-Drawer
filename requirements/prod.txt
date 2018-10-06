@@ -13,10 +13,18 @@ gunicorn>=19.1.1
 
 # Caching
 Flask-Caching>=1.0.0
-Redis
-
-# Debug toolbar
-Flask-DebugToolbar==0.10.1
+Redis==2.*
 
 # REST API
-flask-restful
+flask-restful==0.3.*
+
+# Twitter Data
+twitter-scraper
+python-twitter==3.4.*
+
+# Serialization
+simplejson==3.*
+
+# Sock Puppet Communication
+pyzmq==17.*
+socklint
