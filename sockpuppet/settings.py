@@ -10,8 +10,6 @@ class Config(object):
     SECRET_KEY = os.environ.get('SOCKDRAWER_SECRET', 'secret-key')  # TODO: Change me
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    DEBUG_TB_ENABLED = False  # Disable Debug toolbar
-    DEBUG_TB_INTERCEPT_REDIRECTS = False
     CACHE_TYPE = 'redis'  # Can be "memcached", "redis", etc.
     CACHE_DEFAULT_TIMEOUT = 3600 * 72  # 3 days, given in seconds
     TWITTER_CONSUMER_KEY = os.environ.get("TWITTER_CONSUMER_KEY")
@@ -32,7 +30,6 @@ class ProdConfig(Config):
 
     ENV = 'prod'
     DEBUG = False
-    DEBUG_TB_ENABLED = False  # Disable Debug toolbar
 
 
 class DevConfig(Config):
@@ -40,7 +37,6 @@ class DevConfig(Config):
 
     ENV = 'dev'
     DEBUG = True
-    DEBUG_TB_ENABLED = True
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
 
 
