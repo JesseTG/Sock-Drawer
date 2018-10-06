@@ -17,6 +17,8 @@ from zmq import Context, Socket
 
 from flask import Flask, current_app, _app_ctx_stack
 
+# TODO: Package this and submit it to PyPi
+
 
 class ZMQSocket(object):
     # TODO: Allow multiple instances of this extension to be added
