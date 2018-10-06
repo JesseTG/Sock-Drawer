@@ -12,6 +12,8 @@ def create_app(config_object=ProdConfig) -> Flask:
 
     :param config_object: The configuration object to use.
     """
+
+    # TODO: Validate config, abort the app if it's not valid
     app = Flask(__name__.split('.')[0])
     app.config.from_object(config_object)
     register_extensions(app)
