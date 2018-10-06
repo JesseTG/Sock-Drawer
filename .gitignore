@@ -5,6 +5,7 @@ __pycache__/
 sockpuppet/__pycache__
 sockpuppet/*/__pycache__
 sockpuppet/*/*/__pycache__
+flask_zmq/*/__pycache__
 tests/__pycache__
 
 # C extensions
