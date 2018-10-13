@@ -6,6 +6,7 @@ from collections import namedtuple
 import pytest
 from webtest import TestApp
 from webtest.response import TestResponse
+import werkzeug
 
 pytestmark = [pytest.mark.usefixtures("sockpuppet_server")]
 
@@ -282,6 +283,15 @@ def test_message_provided(testapp: TestApp, user_request: Tuple[TestResponse, HT
 
     assert "message" in response.json
     assert isinstance(response.json["message"], str)
+
+
+def test_message_not_default(testapp: TestApp, user_request: Tuple[TestResponse, HTTPStatus]):
+    response = user_request[0]  # type: TestResponse
+    expected_status = user_request[1]  # type: HTTPStatus
+
+    if expected_status >= 400:
+        default_message = werkzeug.exceptions.default_exceptions[expected_status].description  # type: str
+        assert response.json["message"] != default_message
 
 # def test_gzip_request(testapp: TestApp):
 #     response = testapp.request(f"/api/1/user?ids=JesseT_G", method="GET", expect_errors=True)  # type: TestResponse
