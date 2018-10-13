@@ -189,6 +189,13 @@ REQUESTS = (
         HTTPStatus.BAD_REQUEST,
         {"method": "GET"}
     ), id="invalid-bytes"),
+    # TODO: @ in middle of name
+    # TODO: @ at end of name
+    # TODO: @ and # in name
+    # TODO: Name made only of @ and/or #
+    # TODO: # at start of name
+    # TODO: # in middle of name
+    # TODO: # at end of name
 )
 
 
