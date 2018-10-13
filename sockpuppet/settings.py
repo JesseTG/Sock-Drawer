@@ -33,6 +33,8 @@ class Config(object):
         load_secret("SOCKDRAWER_SECRET_KEY_FILE", required=False)
     )
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
+    API_SPEC = os.environ.get("SOCKDRAWER_API_SPEC", "v1-swagger.yml")
+    SPECIFICATION_DIR = os.environ.get("SOCKDRAWER_SPECIFICATION_DIR", "api/")
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     CACHE_TYPE = 'redis'  # Can be "memcached", "redis", etc.
     CACHE_DEFAULT_TIMEOUT = 3600 * 72  # 3 days, given in seconds
