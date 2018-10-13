@@ -240,12 +240,12 @@ def test_response_apiversion_field(testapp: TestApp, user_request: Tuple[TestRes
 def test_guesses_provided(testapp: TestApp, user_request: Tuple[TestResponse, HTTPStatus]):
     response = user_request[0]  # type: TestResponse
     expected_status = user_request[1]  # type: HTTPStatus
+    assert "guesses" in response.json
+
+    guesses = response.json["guesses"]
+    assert isinstance(guesses, list)
 
     if expected_status == HTTPStatus.OK:
-        assert "guesses" in response.json
-        guesses = response.json["guesses"]
-        assert isinstance(guesses, list)
-
         for g in guesses:
             assert isinstance(g, dict)
             assert "status" in g
@@ -265,7 +265,7 @@ def test_guesses_provided(testapp: TestApp, user_request: Tuple[TestResponse, HT
                 assert "message" in g
                 assert isinstance(g["message"], str)
     else:
-        assert "guesses" not in response.json
+        assert len(guesses) == 0
 
 
 def test_status_provided(testapp: TestApp, user_request: Tuple[TestResponse, HTTPStatus]):
