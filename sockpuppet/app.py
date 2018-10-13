@@ -73,7 +73,7 @@ def register_shellcontext(connex: FlaskApp):
         """Shell context objects."""
         return {
             'app': connex.app,
-            "connex": connex,
+            'connex': connex,
             'cache': cache,
             'zmq_socket': zmq_socket,
         }
