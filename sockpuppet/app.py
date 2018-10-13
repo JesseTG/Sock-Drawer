@@ -1,33 +1,40 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
+from typing import Tuple
 from flask import Flask, render_template
+from connexion import FlaskApp
 
-from sockpuppet import commands, public, rest
+from sockpuppet import commands
 from sockpuppet.extensions import api, cache, zmq_socket
 from sockpuppet.api import v1
 from sockpuppet.settings import ProdConfig
 
 
-def create_app(config_object=ProdConfig) -> Flask:
+def create_app(config_object=ProdConfig) -> FlaskApp:
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
     """
 
     # TODO: Validate config, abort the app if it's not valid
-    app = Flask(__name__.split('.')[0])
+    connex = FlaskApp(
+        __name__.split('.')[0],
+        specification_dir=config_object.SPECIFICATION_DIR
+    )
+    connex.add_api(config_object.API_SPEC)
+    app = connex.app
     app.config.from_object(config_object)
     register_extensions(app)
     register_resources(app)
     register_blueprints(app)
     register_errorhandlers(app)
-    register_shellcontext(app)
+    register_shellcontext(connex)
     register_commands(app)
 
     if config_object.DEBUG:
         app.logger.setLevel("INFO")
 
-    return app
+    return connex
 
 
 def register_extensions(app: Flask):
@@ -45,7 +52,7 @@ def register_resources(app: Flask):
 def register_blueprints(app: Flask):
     """Register Flask blueprints."""
 
-    app.register_blueprint(v1.blueprint, url_prefix="/api/1")
+    #app.register_blueprint(v1.blueprint, url_prefix="/api/1")
 
 
 def register_errorhandlers(app: Flask):
@@ -60,18 +67,18 @@ def register_errorhandlers(app: Flask):
         app.errorhandler(errcode)(render_error)
 
 
-def register_shellcontext(app: Flask):
+def register_shellcontext(connex: FlaskApp):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
         return {
-            'app': app,
-            # 'api': api,
+            'app': connex.app,
+            "connex": connex,
             'cache': cache,
             'zmq_socket': zmq_socket,
         }
 
-    app.shell_context_processor(shell_context)
+    connex.app.shell_context_processor(shell_context)
 
 
 def register_commands(app: Flask):

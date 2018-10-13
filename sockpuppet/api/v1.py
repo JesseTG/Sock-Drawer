@@ -120,8 +120,7 @@ user_parser.add_argument(
 )
 
 
-@blueprint.route("/user")
-def user():
+def get_user():
     args = user_parser.parse_args(strict=True)
     user_ids = args.ids  # type: Sequence[str]
 
@@ -168,19 +167,5 @@ def user():
     return response
 
 
-class Tweet(Resource):
-    def get(self):
-        current_app.logger.warning("It me")
-
-        return {
-            "results": ["yes"]
-        }, 200
-
-
-class Text(Resource):
-    def get(self):
-        current_app.logger.warning("It me")
-
-        return {
-            "results": ["yes"]
-        }, 200
+def post_user():
+    return "france"

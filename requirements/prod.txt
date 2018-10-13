@@ -7,6 +7,7 @@ Werkzeug==0.14.*
 Jinja2==2.10
 itsdangerous==0.24
 click>=5.*
+connexion==1.5.*
 
 # Deployment
 gunicorn>=19.1.1
@@ -27,4 +28,4 @@ simplejson==3.*
 
 # Sock Puppet Communication
 pyzmq==17.*
-socklint
+aiozmq==0.8.*

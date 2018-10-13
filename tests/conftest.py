@@ -12,6 +12,7 @@ from zmq import Context, Socket
 
 import pytest
 from flask import Flask
+from connexion import FlaskApp
 from pytest import Item, Session
 from webtest import TestApp
 
@@ -33,9 +34,10 @@ def pytest_report_header(config, startdir):
 
 
 @pytest.fixture(scope="session")
-def app() -> Flask:
+def app() -> FlaskApp:
     """An application for the tests."""
-    _app = create_app(TestConfig)
+    connex = create_app(TestConfig)
+    _app = connex.app
     _app.testing = True
     ctx = _app.test_request_context()
     ctx.push()

@@ -3,7 +3,7 @@ info:
   title: Sock Puppet
   version: "1.0.0"
   description: >
-    Detect bots on Twitter
+    Detect bots on Twitter.  
 
   termsOfService: >
     Don't be a dick, don't work for a foreign government
@@ -13,8 +13,8 @@ info:
   license:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-host: "virtserver.swaggerhub.com"
-basePath: /api
+# host: "virtserver.swaggerhub.com"
+# basePath: /api
 schemes:
   - https
   - http
@@ -49,7 +49,7 @@ x-common:
     pattern: *username-pattern
 
 paths:
-  /v1/user:
+  /api/1/user:
     get:
       summary: &v1-user-get-summary "rates one or more users as bots (or not)"
       description: &v1-user-get-description >
@@ -57,7 +57,7 @@ paths:
         influence American elections.
       tags: &v1-user-get-tags
         - user
-      operationId: sockpuppet.user.get
+      operationId: sockpuppet.api.v1.get_user
       parameters:
         - name: ids
           in: query
@@ -76,10 +76,14 @@ paths:
         200:
           $ref: "#/responses/Success"
         400:
-          $ref: "#/responses/BadRequest"
+          $ref: "#/responses/SyntaxError"
           
-        '401':
+        '403':
           description: secret key incorrect or not found # mashape
+        405:
+          description: method not allowed
+        406:
+          description: only have json (can't just look for "application/json", need to do some matching)
         '414':
           description: parameter is too large, must be under 1024 bytes # nginx?
         '415':
@@ -88,6 +92,8 @@ paths:
           description: partial responses not supported # nginx?
         '417':
           description: expect not supported #nginx?
+        '422':
+          $ref: "#/responses/SemanticError"
         '429':
           description: slow your roll # nginx?
         '431':
@@ -107,21 +113,30 @@ paths:
       consumes:
         - application/json
       tags: *v1-user-get-tags
-      operationId: sockpuppet.user.post
+      operationId: sockpuppet.api.v1.post_user
       responses:
         200:
           $ref: "#/responses/Success"
-        '400':
-          description: 'invalid input, object invalid'
-        '409':
-          description: an existing item already exists
+        400:
+          $ref: "#/responses/SyntaxError"
+        404:
+          $ref: "#/responses/InvalidMethod"
+        413:
+          description: payload too large # nginx?
+        415:
+          description: only json messages can be received
+        422:
+          $ref: "#/responses/SemanticError"
+
       parameters:
         - name: ids
           in: body
           required: true
           schema:
             $ref: "#/definitions/Request"
-          description: Request to make
+          description: >
+            Request to make.  All JSON fields may be in any order, and are case
+            sensitive.
 responses:
   Success:
     schema:
@@ -130,7 +145,6 @@ responses:
       The request was properly formatted and Sock Puppet was able to process
       it.  **This does not mean that each user could be found and rated.**
       Requests for private or non-existent users will still return a 200.
-    
     examples:
       application/json:
         {
@@ -138,24 +152,123 @@ responses:
           "id": 1841198156,
           "result": [
             {
-              "id": "@NateSilver538",
-              "type": "user"
+              "id": "TEN_GOP",
+              "type": "user",
+              "status": "bot"
+            },
+            {
+              "id": "@RealAlexJones",
+              "type": "user",
+              "status": "unavailable"
+            },
+            {
+              "id": "stallman",
+              "type": "user",
+              "status": "unknown"
+            },
+            {
+              "id": "+93957809",
+              "type": "user",
+              "status": "human"
+            },
+            {
+              "id": "2048",
+              "type": "user",
+              "status": "human"
             }
           ]
         }
-  BadRequest:    
-    description: "bad input parameter (e.g. username with invalid characters)"
+  BadGetRequest:
     schema:
       $ref: "#/definitions/Response"
+    description: |
+      The `GET` request's syntax was invalid for one or more of the following reasons:
+
+      - At least one username in `ids` was empty or had invalid characters
+      - The `ids` parameter was missing or empty
+      - Any parameter besides `ids` was given, even if the value of `ids` is valid
+
+    examples:
+      application/json:
+        {
+          "jsonrpc": "2.0",
+          "id": -2944960439309616,
+          "error": {
+            "code": 4001,
+            "message": "Invalid character in URL",
+            "data": {
+              "info": "Usernames must be alphanumeric (plus underscores), and may be prefixed by @ (or + if it's an ID number)."
+            }
+          }
+        }
+  SyntaxError:
+    schema:
+      $ref: "#/definitions/Response"
+    description: >
+      The request was not syntactically valid JSON.
+    examples:
+      application/json:
+        {
+          "jsonrpc": "2.0",
+          "id": null,
+          "error": {
+            "code": -32700,
+            "message": "Syntax error",
+            "data": {
+              "info": "Ensure that you're actually trying to send JSON, and if so then double-check your quotes, brackets, and commas."
+            }
+          }
+        }
+  InvalidMethod:
+    schema:
+      $ref: "#/definitions/Response"
+    description: >
+      Invalid method
+      
+    examples:
+      application/json:
+        {
+          "jsonrpc": "2.0",
+          "id": -4029460352058180,
+          "error": {
+            "code": -32601,
+            "message": "Unsupported JSON-RPC method",
+            "data": {
+              "info": "Only the 'guess' method is currently supported."
+            }
+          }
+        }
+  SemanticError:
+    schema:
+      $ref: "#/definitions/Response"
+    description: >
+      The request was valid JSON but Sock Puppet doesn't understand it.  Possible reasons include:
+      - A required field was not found or had the wrong type
+      
+    examples:
+      application/json:
+        {
+          "jsonrpc": "2.0",
+          "id": -4029460352058180,
+          "error": {
+            "code": -32601,
+            "message": "Unsupported JSON-RPC method",
+            "data": {
+              "info": "Only the \"guess\" method is supported right now."
+            }
+          }
+        }
 
 definitions:
   Username:
     <<: *username-items
     description: >
-      A screen name.  For convenience, usernames can be optionally prefixed
-      with `@`.  Usernames can be entirely numeric, so ID numbers must be
-      prefixed with `+`.  Twitter describes its rules for usernames
-      [here](https://help.twitter.com/en/managing-your-account/twitter-username-rules).
+      A *case-insensitive* screen name or an ID number.  For convenience,
+      usernames can be optionally prefixed with `@`.  Usernames can be entirely
+      numeric, so ID numbers must be prefixed with `+`.  Twitter describes its
+      rules for usernames [here](https://help.twitter.com/en/managing-your-account/twitter-username-rules).
+
+    example: "AP_Oddities"
   jsonrpc:
     type: string
     title: JSON-RPC Version
@@ -170,9 +283,9 @@ definitions:
     format: int64
     title: JSON-RPC ID
     description: >
-      Numeric ID of this request.  Can be any integer between -((2^53)-1) and
-      (2^53)-1, as these can safely be converted to a JSON `Number` without
-      loss of precision.  We recommend generating it randomly.  Will be
+      Numeric ID of this request.  Can be any integer between -(2<sup>53</sup>-1)
+      and 2<sup>53</sup>-1, as these can safely be converted to a JSON `Number`
+      without loss of precision.  We recommend generating it randomly.  Will be
       returned in the response's `id` field.
     minimum: -9007199254740991
     maximum: 9007199254740991
@@ -181,8 +294,11 @@ definitions:
     type: object
     description: >
       Requests made to Sock Puppet via the `POST` method must adhere to this
-      schema.  Not necessary for the `GET` method; query parameters will
-      suffice.
+      schema.  Adheres to the [JSON-RPC 2.0](https://www.jsonrpc.org) specification,
+      except that [batch requests](https://www.jsonrpc.org/specification#batch)
+      and [notifications](https://www.jsonrpc.org/specification#notification)
+      are not supported.  Not necessary for the `GET` method; query parameters
+      will suffice.
     required:
       - jsonrpc
       - id
@@ -197,7 +313,7 @@ definitions:
         type: string
         description: >
           The server-side method to call.  Only the value `guess` is currently
-          available.
+          available.  Case-insensitive.
         enum:
           - guess
         example: guess
@@ -205,15 +321,40 @@ definitions:
         type: object
         description: >
           Object containing parameters for the request to Sock Puppet.  Only
-          `ids` is currently available.
+          `ids` is currently allowed.
+        required:
+          - ids
         properties:
           ids:
             type: array
             description: >
               An array of usernames, as described in the `Username` model.
+              Names may be given in any order, and are case-insensitive.
+            minItems: 1
+            maxItems: 10
             uniqueItems: true
             items:
               $ref: "#/definitions/Username"
+            example:
+              - "@NateSilver538"
+              - "CookPolitical"
+              - "+93957809"
+              - "2048"
+    example:
+      {
+        "jsonrpc": "2.0",
+        "id": 1841198156,
+        "method": "guess",
+        "params": {
+          "ids": [
+            "TEN_GOP",
+            "@RealAlexJones",
+            "stallman",
+            "+93957809",
+            "2048"
+          ]
+        }
+      }
   Response:
     type: object
     description: >
@@ -229,8 +370,10 @@ definitions:
       id:
         <<: *jsonrpc-id
         description: >
-          The ID that was given in the originating `Request`.  Will be `null`
-          if the original ID was invalid or couldn't be determined.
+          The ID that was given in the originating `Request`.  If the original
+          ID was invalid or couldn't be determined, will be `null`.  If the
+          originating request was made via `GET`, will be valid and randomly
+          generated.
 
       result:
         type: array
@@ -266,6 +409,17 @@ definitions:
         type: string
         description: >
           A description of the error and guidance on a possible solution.
+      data:
+        type: object
+        description: >
+          Additional information that accompanies this error.  Other fields may be provided.
+        required:
+          - info
+        properties:
+          info:
+            type: string
+            description: >
+              A human-readable description of something you can do.
   Guess:
     type: object
     readOnly: true
@@ -284,13 +438,15 @@ definitions:
         type: string
         description: >
           The type of query this is.  Only "user" is available at this moment.
+          Case-insensitive.
         enum:
           - user
         example: user
       status:
         type: string
         description: >
-          Whether or not Sock Puppet could find this user's tweets.  Possible values are:
+          Whether or not Sock Puppet could find this user's tweets.  Case-insensitive.
+          Possible values are:
             - `bot`: User was determined to be a bot.
             - `human`: User was determined to be a human.
             - `unavailable`: User does not exist, is banned, or is [protected](https://help.twitter.com/en/safety-and-security/public-and-protected-tweets).
@@ -300,6 +456,7 @@ definitions:
           - human
           - unavailable
           - unknown
+        example: bot
 
 
 
