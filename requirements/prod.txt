@@ -16,9 +16,6 @@ gunicorn>=19.1.1
 Flask-Caching>=1.0.0
 Redis==2.*
 
-# REST API
-flask-restful==0.3.*
-
 # Twitter Data
 twitter-scraper
 python-twitter==3.4.*

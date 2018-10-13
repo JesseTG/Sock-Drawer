@@ -15,50 +15,10 @@ import zmq
 from flask import jsonify
 
 API_VERSION = "1.0"
-API_VERSION_FIELD = 'apiVersion'
-
-blueprint = Blueprint("api.v1", __name__)
-
 
 BotQueryResponse = namedtuple("BotQueryResponse", ["apiVersion", "status", "statusType", "message", "guesses"])
 Guess = namedtuple("Guess", ["status", "type", "id", "message", "bot"], defaults=["OK", "", "", "", ""])
 # TODO: Subclass namedtuple
-
-
-def handle_error(error: SockPuppetError):
-    response = jsonify(BotQueryResponse(
-        apiVersion=API_VERSION,
-        status=error.status_code,
-        statusType=type(error).__name__,
-        message=error.message,
-        guesses=()
-    ))  # type: Response
-
-    response.status_code = error.status_code
-
-    return response
-
-
-@blueprint.app_errorhandler(HTTPException)
-def handle_http_error(error: HTTPException):
-    message = error.data["message"]["ids"] if "data" in dir(error) else error.description
-    response = jsonify(BotQueryResponse(
-        apiVersion=API_VERSION,
-        status=error.code,
-        statusType=type(error).__name__,
-        message=message,
-        guesses=()
-    ))  # type: Response
-
-    response.status_code = error.code
-
-    return response
-
-for i in (EmptyNameError, BadCharacterError):
-    blueprint.register_error_handler(i, handle_error)
-
-# for i in (400, 405):
-#     blueprint.register_error_handler(i, handle_http_error)
 
 
 def user_or_id(name: str) -> Union[str, int]:
