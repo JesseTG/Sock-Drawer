@@ -180,7 +180,7 @@ REQUESTS = (
         }
     ), id="wont-accept-json"),
     pytest.param(Request(
-        f"/api/1/user?ids={'' * 6000}",
+        f"/api/1/user?ids={'f' * 6000}",
         HTTPStatus.REQUEST_URI_TOO_LONG,
         {"method": "GET"}
     ), id="large-url"),
