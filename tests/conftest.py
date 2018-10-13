@@ -16,7 +16,6 @@ from connexion import FlaskApp
 from pytest import Item, Session
 from webtest import TestApp
 
-import socklint
 from sockpuppet.app import create_app
 from sockpuppet.settings import TestConfig
 
@@ -29,7 +28,7 @@ pytest_plugins = 'pytester'
 def pytest_report_header(config, startdir):
 
     return (
-        f"socklint: {socklint.__file__}",
+        ""
     )
 
 
