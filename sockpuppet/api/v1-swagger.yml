@@ -1,0 +1,305 @@
+swagger: "2.0"
+info:
+  title: Sock Puppet
+  version: "1.0.0"
+  description: >
+    Detect bots on Twitter
+
+  termsOfService: >
+    Don't be a dick, don't work for a foreign government
+  contact:
+    name: Jesse Talavera-Greenberg
+    email: jessetalavera@aol.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: "virtserver.swaggerhub.com"
+basePath: /api
+schemes:
+  - https
+  - http
+produces:
+  - application/json
+securityDefinitions:
+  X-Mashape-Key:
+    type: apiKey
+    name: X-Mashape-Key
+    in: header
+    description: >
+      API key provided by Mashape.  You need to register with RapidAPI to
+      obtain one, and it must be provided with all calls to Sock Puppet.  See
+      [here](https://docs.rapidapi.com/docs/keys) for more information.
+security:
+  - X-Mashape-Key: []
+tags:
+  - name: user
+    description: Query Twitter users
+x-common:
+  query-enum: &query-enum
+    - user
+    - tweet
+    - text
+  username-pattern: &username-pattern '^@?([\d\w_]{1,15})$|^(\+\d{1,20})$'
+  jsonrpc-version: &jsonrpc-version
+    - "2.0"
+  username-items: &username-items
+    type: string
+    minLength: 1
+    maxLength: 21
+    pattern: *username-pattern
+
+paths:
+  /v1/user:
+    get:
+      summary: &v1-user-get-summary "rates one or more users as bots (or not)"
+      description: &v1-user-get-description >
+        Determine whether or not one or more Twitter users is a bot trying to
+        influence American elections.
+      tags: &v1-user-get-tags
+        - user
+      operationId: sockpuppet.user.get
+      parameters:
+        - name: ids
+          in: query
+          collectionFormat: csv
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items: *username-items
+          description: >
+            Comma-separated array of Twitter usernames or ID numbers, as
+            described by the `Username` model.
+          required: true
+          
+      responses:
+        200:
+          $ref: "#/responses/Success"
+        400:
+          $ref: "#/responses/BadRequest"
+          
+        '401':
+          description: secret key incorrect or not found # mashape
+        '414':
+          description: parameter is too large, must be under 1024 bytes # nginx?
+        '415':
+          description: no payload allowed for GET, use POST instead
+        '416':
+          description: partial responses not supported # nginx?
+        '417':
+          description: expect not supported #nginx?
+        '429':
+          description: slow your roll # nginx?
+        '431':
+          description: your headers are too large # nginx?
+        '500':
+          description: something went wrong internally, please file a bug
+        '502':
+          description: couldn't access Twitter, please file a bug
+        '503':
+          description: server's down
+        '504':
+          description: twitter took too long to respond
+          
+    post:
+      summary: *v1-user-get-summary
+      description: *v1-user-get-description
+      consumes:
+        - application/json
+      tags: *v1-user-get-tags
+      operationId: sockpuppet.user.post
+      responses:
+        200:
+          $ref: "#/responses/Success"
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: an existing item already exists
+      parameters:
+        - name: ids
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Request"
+          description: Request to make
+responses:
+  Success:
+    schema:
+      $ref: "#/definitions/Response"
+    description: >
+      The request was properly formatted and Sock Puppet was able to process
+      it.  **This does not mean that each user could be found and rated.**
+      Requests for private or non-existent users will still return a 200.
+    
+    examples:
+      application/json:
+        {
+          "jsonrpc": "2.0",
+          "id": 1841198156,
+          "result": [
+            {
+              "id": "@NateSilver538",
+              "type": "user"
+            }
+          ]
+        }
+  BadRequest:    
+    description: "bad input parameter (e.g. username with invalid characters)"
+    schema:
+      $ref: "#/definitions/Response"
+
+definitions:
+  Username:
+    <<: *username-items
+    description: >
+      A screen name.  For convenience, usernames can be optionally prefixed
+      with `@`.  Usernames can be entirely numeric, so ID numbers must be
+      prefixed with `+`.  Twitter describes its rules for usernames
+      [here](https://help.twitter.com/en/managing-your-account/twitter-username-rules).
+  jsonrpc:
+    type: string
+    title: JSON-RPC Version
+    description: >
+      Version of [JSON-RPC](https://www.jsonrpc.org) in use.  Must *always* be
+      `2.0`.  Note that this is a `String`, not a `Number`.
+    enum:
+      - "2.0"
+    example: "2.0"
+  jsonrpc-id: &jsonrpc-id
+    type: integer
+    format: int64
+    title: JSON-RPC ID
+    description: >
+      Numeric ID of this request.  Can be any integer between -((2^53)-1) and
+      (2^53)-1, as these can safely be converted to a JSON `Number` without
+      loss of precision.  We recommend generating it randomly.  Will be
+      returned in the response's `id` field.
+    minimum: -9007199254740991
+    maximum: 9007199254740991
+    example: 8422156
+  Request:
+    type: object
+    description: >
+      Requests made to Sock Puppet via the `POST` method must adhere to this
+      schema.  Not necessary for the `GET` method; query parameters will
+      suffice.
+    required:
+      - jsonrpc
+      - id
+      - method
+      - params
+    properties:
+      jsonrpc:
+        $ref: "#/definitions/jsonrpc"
+      id:
+        <<: *jsonrpc-id
+      method:
+        type: string
+        description: >
+          The server-side method to call.  Only the value `guess` is currently
+          available.
+        enum:
+          - guess
+        example: guess
+      params:
+        type: object
+        description: >
+          Object containing parameters for the request to Sock Puppet.  Only
+          `ids` is currently available.
+        properties:
+          ids:
+            type: array
+            description: >
+              An array of usernames, as described in the `Username` model.
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/Username"
+  Response:
+    type: object
+    description: >
+      The result of a query made to Sock Puppet.  A request made with either
+      the `GET` or `POST` methods will return one of these.
+    readOnly: true
+    required:
+      - jsonrpc
+      - id
+    properties:
+      jsonrpc:
+        $ref: "#/definitions/jsonrpc"
+      id:
+        <<: *jsonrpc-id
+        description: >
+          The ID that was given in the originating `Request`.  Will be `null`
+          if the original ID was invalid or couldn't be determined.
+
+      result:
+        type: array
+        description: >
+          One or more `Guess` objects that describe Sock Puppet's rating of
+          each requested user.  Some of these `Guess`es may have failed if the
+          requested user is private, banned, or non-existent.  The HTTP status
+          will still be 200, so remember to check these objects!  Present only
+          if the request was successful; otherwise, see `error`.
+        items:
+          $ref: '#/definitions/Guess'
+      error:
+        $ref: '#/definitions/Error'
+  Error:
+    type: object
+    description: >
+      A description of the erroneous conditions that prevented your request
+      from completing properly.  Present only if the request was a failure;
+      otherwise, see `result`.
+    readOnly: true
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: >
+          A numeric code that indicates the exact error type.  Not necessarily
+          the same as the HTTP status code.  See the Responses section of each
+          endpoint for possible error codes.
+      message:
+        type: string
+        description: >
+          A description of the error and guidance on a possible solution.
+  Guess:
+    type: object
+    readOnly: true
+    description: >
+      The determination made by Sock Puppet on whether or not this object
+      represents a bot.
+    required:
+      - id
+      - type
+      - status
+    properties:
+      id:
+        $ref: "#/definitions/Username"
+        # TODO: Custom description
+      type:
+        type: string
+        description: >
+          The type of query this is.  Only "user" is available at this moment.
+        enum:
+          - user
+        example: user
+      status:
+        type: string
+        description: >
+          Whether or not Sock Puppet could find this user's tweets.  Possible values are:
+            - `bot`: User was determined to be a bot.
+            - `human`: User was determined to be a human.
+            - `unavailable`: User does not exist, is banned, or is [protected](https://help.twitter.com/en/safety-and-security/public-and-protected-tweets).
+            - `unknown`: User doesn't have enough tweets to make a determination.
+        enum:
+          - bot
+          - human
+          - unavailable
+          - unknown
+
+
+
