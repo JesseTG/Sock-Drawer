@@ -3,16 +3,62 @@ from typing import Sequence, Union
 from json import JSONEncoder
 from http import HTTPStatus
 
+import flask
 from twitter_scraper import get_tweets
 from twint import Config
-from flask import Blueprint, Flask, current_app
+from flask import Blueprint, Flask, current_app, Response
 from flask_restful import Resource, reqparse, fields, inputs
 from sockpuppet.extensions import cache, zmq_socket
-from socklint import Response, Guess
-from sockpuppet.errors import EmptyNameError
+from sockpuppet.errors import SockPuppetError, EmptyNameError, BadCharacterError
+from werkzeug.exceptions import BadRequest, HTTPException
 import zmq
+from flask import jsonify
+
+API_VERSION = "1.0"
+API_VERSION_FIELD = 'apiVersion'
 
 blueprint = Blueprint("api.v1", __name__)
+
+
+BotQueryResponse = namedtuple("BotQueryResponse", ["apiVersion", "status", "statusType", "message", "guesses"])
+Guess = namedtuple("Guess", ["status", "type", "id", "message", "bot"], defaults=["OK", "", "", "", ""])
+# TODO: Subclass namedtuple
+
+
+def handle_error(error: SockPuppetError):
+    response = jsonify(BotQueryResponse(
+        apiVersion=API_VERSION,
+        status=error.status_code,
+        statusType=type(error).__name__,
+        message=error.message,
+        guesses=()
+    ))  # type: Response
+
+    response.status_code = error.status_code
+
+    return response
+
+
+@blueprint.app_errorhandler(HTTPException)
+def handle_http_error(error: HTTPException):
+    message = error.data["message"]["ids"] if "data" in dir(error) else error.description
+    response = jsonify(BotQueryResponse(
+        apiVersion=API_VERSION,
+        status=error.code,
+        statusType=type(error).__name__,
+        message=message,
+        guesses=()
+    ))  # type: Response
+
+    response.status_code = error.code
+
+    return response
+
+for i in (EmptyNameError, BadCharacterError):
+    blueprint.register_error_handler(i, handle_error)
+
+# for i in (400, 405):
+#     blueprint.register_error_handler(i, handle_http_error)
 
 
 def user_or_id(name: str) -> Union[str, int]:
@@ -28,16 +74,18 @@ def user_or_id(name: str) -> Union[str, int]:
 
 def parse_user_ids(arg: str) -> Sequence[str]:
     if arg is None or len(arg) == 0:
-        raise EmptyNameError("america")
+        raise EmptyNameError()
+    elif not arg.isprintable():
+        raise BadCharacterError()
 
     id_strings = arg.split(',')
 
     if any(len(i) == 0 for i in id_strings):
         # If any argument is empty...
-        raise EmptyNameError("spain")
+        raise EmptyNameError()
         # TODO: How to provide my own result structure?  My own handler?
 
-    return tuple(map(user_or_id, id_strings))
+    return tuple(user_or_id(i) for i in id_strings)
 
 
 def parse_tweet_ids(arg: str) -> Sequence[int]:
@@ -65,46 +113,59 @@ user_parser = reqparse.RequestParser()
 user_parser.add_argument(
     'ids',
     type=parse_user_ids,
-    nullable=False,
-    required=True,
+    nullable=True,
+    required=False,
     # location="args",
     trim=True
 )
 
-# TODO: Use https://flask-restful.readthedocs.io/en/latest/extending.html#define-custom-error-messages
-# for error handling
 
+@blueprint.route("/user")
+def user():
+    args = user_parser.parse_args(strict=True)
+    user_ids = args.ids  # type: Sequence[str]
 
-class User(Resource):
-    def get(self):
-        args = user_parser.parse_args(strict=True)
-        user_ids = args.ids  # type: Sequence[str]
+    if not args.ids:
+        raise EmptyNameError()
 
-        guesses = []
-        for i in user_ids:
-            try:
-                tweets = get_recent_tweets(user_ids[0], 20)  # type: Sequence[str]
-                zmq_socket.socket.send_json(tweets)
-                results = zmq_socket.socket.recv_json()  # type: Sequence[bool]
+    guesses = []
+    for i in user_ids:
+        guess = None
+        try:
+            tweets = get_recent_tweets(user_ids[0], 20)  # type: Sequence[str]
+            zmq_socket.socket.send_json(tweets)
+            results = zmq_socket.socket.recv_json()  # type: Sequence[bool]
 
-                guesses.append(Guess(
-                    id=str(i),
-                    type="user",
-                    status="OK",
-                    bot=(sum(results) / len(results)) >= 0.5
-                ))
-            except ValueError:
-                # The user is private or doesn't exist...
+            guess = Guess(
+                id=str(i),
+                type="user",
+                status="OK",
+                bot=(sum(results) / len(results)) >= 0.5
+            )
+        except ValueError:
+            # The user is private or doesn't exist...
+            guess = Guess(
+                id=str(i),
+                type="user",
+                status="UserNotFound",
+                message="This user is private or doesn't exist"
+            )
 
-                guesses.append(Guess(
-                    id=str(i),
-                    type="user",
-                    status="UserNotFound",
-                    message="This user is private or doesn't exist"
-                ))
+        guesses.append(guess)
 
-        response = Response(guesses=guesses)
-        return response, HTTPStatus.OK
+    query_response = BotQueryResponse(
+        apiVersion=API_VERSION,
+        status=HTTPStatus.OK,
+        statusType="OK",
+        message="Success",
+        guesses=guesses
+    )
+    response = jsonify(query_response)  # type: Response
+
+    response.status_code = HTTPStatus.OK
+    response.content_type = "application/json"
+
+    return response
 
 
 class Tweet(Resource):

@@ -32,13 +32,14 @@ def create_app(config_object=ProdConfig) -> Flask:
 
 def register_extensions(app: Flask):
     """Register Flask extensions."""
-    api.init_app(v1.blueprint)
+    # api.init_app(v1.blueprint)
     cache.init_app(app)
     zmq_socket.init_app(app)
 
 
 def register_resources(app: Flask):
-    api.add_resource(v1.User, "/user")
+    # api.add_resource(v1.User, "/user")
+    pass
 
 
 def register_blueprints(app: Flask):
@@ -54,6 +55,7 @@ def register_errorhandlers(app: Flask):
         # If a HTTPException, pull the `code` attribute; default to 500
         error_code = getattr(error, 'code', 500)
         return str(error), error_code
+
     for errcode in [401, 404, 500]:
         app.errorhandler(errcode)(render_error)
 
@@ -64,7 +66,7 @@ def register_shellcontext(app: Flask):
         """Shell context objects."""
         return {
             'app': app,
-            'api': api,
+            # 'api': api,
             'cache': cache,
             'zmq_socket': zmq_socket,
         }
