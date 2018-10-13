@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
 from typing import Tuple
-from flask import Flask, render_template
+from flask import Flask
 from connexion import FlaskApp
+from simplejson import JSONDecoder, JSONEncoder
 
 from sockpuppet import commands
 from sockpuppet.extensions import api, cache, zmq_socket
 from sockpuppet.api import v1
-from sockpuppet.settings import ProdConfig
+from sockpuppet.settings import Config, ProdConfig
 
 
-def create_app(config_object=ProdConfig) -> FlaskApp:
+def create_app(config_object: Config=ProdConfig) -> FlaskApp:
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
@@ -24,9 +25,7 @@ def create_app(config_object=ProdConfig) -> FlaskApp:
     connex.add_api(config_object.API_SPEC)
     app = connex.app
     app.config.from_object(config_object)
-    register_extensions(app)
-    register_resources(app)
-    register_blueprints(app)
+    register_extensions(app, config_object)
     register_errorhandlers(app)
     register_shellcontext(connex)
     register_commands(app)
@@ -37,22 +36,12 @@ def create_app(config_object=ProdConfig) -> FlaskApp:
     return connex
 
 
-def register_extensions(app: Flask):
+def register_extensions(app: Flask, config: Config):
     """Register Flask extensions."""
-    # api.init_app(v1.blueprint)
     cache.init_app(app)
     zmq_socket.init_app(app)
-
-
-def register_resources(app: Flask):
-    # api.add_resource(v1.User, "/user")
-    pass
-
-
-def register_blueprints(app: Flask):
-    """Register Flask blueprints."""
-
-    #app.register_blueprint(v1.blueprint, url_prefix="/api/1")
+    app.json_encoder = JSONEncoder
+    app.json_decoder = JSONDecoder
 
 
 def register_errorhandlers(app: Flask):
