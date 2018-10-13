@@ -12,3 +12,6 @@ COPY . ${WORKDIR}
 RUN "${WORKDIR}/provision.sh"
 
 EXPOSE 80 443
+
+#HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "executable" ]
+# some flask command more likely
