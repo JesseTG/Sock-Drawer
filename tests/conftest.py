@@ -56,19 +56,19 @@ def client(app: Flask):
 def sockpuppet_server():
     env = dict(os.environ)  # type: Dict[str, str]
 
-    env["SOCKPUPPET_TRAINED_MODEL_PATH"] = TestConfig.SOCKPUPPET_TRAINED_MODEL_PATH
-    env["SOCKPUPPET_WORD_EMBEDDING_PATH"] = TestConfig.SOCKPUPPET_WORD_EMBEDDING_PATH
-    env["SOCKPUPPET_SERVER_BIND_ADDRESS"] = TestConfig.SOCKPUPPET_HOST
+    env["SOCK_TRAINED_MODEL_PATH"] = TestConfig.SOCK_TRAINED_MODEL_PATH
+    env["SOCK_WORD_EMBEDDING_PATH"] = TestConfig.SOCK_WORD_EMBEDDING_PATH
+    env["SOCK_SERVER_BIND_ADDRESS"] = TestConfig.SOCK_HOST
 
     context = Context.instance()  # type: Context
     socket = context.socket(zmq.REQ)  # type: Socket
     socket.heartbeat_ivl = 2000
     socket.heartbeat_timeout = 2000
-    socket.connect(TestConfig.SOCKPUPPET_HOST)
+    socket.connect(TestConfig.SOCK_HOST)
     process = subprocess.Popen(
-        (sys.executable, TestConfig.SOCKPUPPET_MAIN_NAME),  # python main.py
+        (sys.executable, TestConfig.SOCK_MAIN_NAME),  # python main.py
         env=env,
-        cwd=TestConfig.SOCKPUPPET_DIR,
+        cwd=TestConfig.SOCK_DIR,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
