@@ -26,6 +26,7 @@ def load_secret(name: str, required=True) -> str:
 
 # TODO: Replace all path strings with Pathlib.Path
 
+
 class Config(object):
     """Base configuration."""
 
@@ -65,10 +66,9 @@ class Config(object):
         "SOCK_WORD_EMBEDDING_PATH",
         os.path.expanduser("~/data/glove/glove.twitter.27B.25d.txt")
     )
-    RESTFUL_JSON = {
-        "cls": JSONEncoder,
-        "for_json": True
-    }
+
+    VALIDATE_RESPONSES = False
+    MAX_URL_LENGTH = int(os.environ.get("SOCKDRAWER_MAX_URL_LENGTH", 1024))
 
 
 class ProdConfig(Config):
@@ -84,6 +84,7 @@ class DevConfig(Config):
     ENV = 'dev'
     DEBUG = True
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
+    VALIDATE_RESPONSES = True
 
 
 class TestConfig(Config):
@@ -93,3 +94,4 @@ class TestConfig(Config):
     DEBUG = True
     ZMQ_CONNECT_ADDR = "ipc:///tmp/sockdrawer-sock-test"
     SOCK_HOST = "ipc:///tmp/sockdrawer-sock-test"
+    VALIDATE_RESPONSES = True
