@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
 from typing import Tuple
-from flask import Flask
-from connexion import FlaskApp
+from flask import Flask, Response, jsonify
+from http import HTTPStatus
+from connexion import FlaskApp, FlaskApi, ProblemException
 from simplejson import JSONDecoder, JSONEncoder
-
+from werkzeug.exceptions import HTTPException, BadRequest
+from jsonrpc.exceptions import JSONRPCInvalidRequest
 from sockpuppet import commands
 from sockpuppet.extensions import api, cache, zmq_socket
 from sockpuppet.api import v1
 from sockpuppet.settings import Config, ProdConfig
+from sockpuppet.errors import EmptyNameError, BadCharacterError
 
 
 def create_app(config_object: Config=ProdConfig) -> FlaskApp:
@@ -20,13 +23,19 @@ def create_app(config_object: Config=ProdConfig) -> FlaskApp:
     # TODO: Validate config, abort the app if it's not valid
     connex = FlaskApp(
         __name__.split('.')[0],
-        specification_dir=config_object.SPECIFICATION_DIR
+        specification_dir=config_object.SPECIFICATION_DIR,
+        debug=config_object.DEBUG
     )
-    connex.add_api(config_object.API_SPEC)
+    api = connex.add_api(
+        config_object.API_SPEC,
+        validate_responses=config_object.VALIDATE_RESPONSES,
+        resolver_error=BadRequest
+    )  # type: FlaskApi
     app = connex.app
+
     app.config.from_object(config_object)
     register_extensions(app, config_object)
-    register_errorhandlers(app)
+    register_errorhandlers(app, connex)
     register_shellcontext(connex)
     register_commands(app)
 
@@ -44,16 +53,32 @@ def register_extensions(app: Flask, config: Config):
     app.json_decoder = JSONDecoder
 
 
-def register_errorhandlers(app: Flask):
+def register_errorhandlers(app: Flask, connex: FlaskApp):
     """Register error handlers."""
-    def render_error(error: Exception):
-        """Render error template."""
-        # If a HTTPException, pull the `code` attribute; default to 500
-        error_code = getattr(error, 'code', 500)
-        return str(error), error_code
 
-    for errcode in [401, 404, 500]:
-        app.errorhandler(errcode)(render_error)
+    connex.add_error_handler(BadRequest, v1.handle_http_exception(JSONRPCInvalidRequest))
+
+    @app.after_request
+    def transform(response: Response) -> Response:
+        if response.status_code != HTTPStatus.OK:
+            jsonrpc = jsonify({
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {
+                    "code": -32602,
+                    "message": "Oops",
+                    "data": response.json
+                }
+            })
+            jsonrpc.status_code = response.status_code
+
+            return jsonrpc
+        else:
+            return response
+    # interesting parameters here:
+    # connex.resolver_error
+    # connex.common_error_handler
+    # connex.auth_all_paths
 
 
 def register_shellcontext(connex: FlaskApp):

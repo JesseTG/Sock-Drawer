@@ -6,16 +6,18 @@ import os
 import subprocess
 import sys
 import time
+from random import randint
 from typing import Callable, Dict, Sequence, Union
-import zmq
-from zmq import Context, Socket
 
 import pytest
-from flask import Flask
+import zmq
 from connexion import FlaskApp
+from flask import Flask
 from pytest import Item, Session
 from webtest import TestApp
+from zmq import Context, Socket
 
+import sockpuppet.utils
 from sockpuppet.app import create_app
 from sockpuppet.settings import TestConfig
 
@@ -75,10 +77,20 @@ def sockpuppet_server():
         stderr=subprocess.DEVNULL
     )
 
-    socket.send_json([])
-    ping = socket.recv_json()
-    assert ping == []
+    ping = {
+        "jsonrpc": "2.0",
+        "id": randint(sockpuppet.utils.MIN_JSON_INT, sockpuppet.utils.MAX_JSON_INT),
+        "method": "ping"
+    }
+    socket.send_json(ping)
+    pong = socket.recv_json()
     socket.close()
+
+    assert isinstance(pong, Dict)
+
+    assert pong["jsonrpc"] == ping["jsonrpc"]
+    assert pong["id"] == ping["id"]
+    assert pong["result"] == "pong"
 
     yield process
 
