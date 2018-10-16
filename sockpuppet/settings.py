@@ -24,6 +24,7 @@ def load_secret(name: str, required=True) -> str:
     with open(path, "r") as secret:
         return secret.readline().strip()
 
+# TODO: Replace all path strings with Pathlib.Path
 
 class Config(object):
     """Base configuration."""
