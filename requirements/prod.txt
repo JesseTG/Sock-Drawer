@@ -25,4 +25,4 @@ simplejson==3.*
 
 # ZMQ
 pyzmq==17.*
-aiozmq==0.8.*
+json-rpc==1.11.*
