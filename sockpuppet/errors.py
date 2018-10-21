@@ -1,5 +1,6 @@
-from typing import Optional, Dict
 from http import HTTPStatus
+from typing import Dict, Optional
+
 from flask import jsonify
 
 
