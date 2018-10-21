@@ -64,6 +64,7 @@ class Config(object):
         os.path.expanduser("~/data/trained/trained-25.pkl")
     )
 
+    # TODO: Condense ZMQ_CONNECT_ADDR and SOCK_HOST
     SOCK_WORD_EMBEDDING_PATH = os.environ.get(
         "SOCK_WORD_EMBEDDING_PATH",
         os.path.expanduser("~/data/glove/glove.twitter.27B.25d.txt")
