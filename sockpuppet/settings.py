@@ -55,8 +55,8 @@ class Config(object):
     CACHE_REDIS_PASSWORD = os.environ.get("SOCKDRAWER_REDIS_PASSWORD")
     CACHE_REDIS_DB = os.environ.get("SOCKDRAWER_REDIS_DB", 0)
     SOCK_HOST = os.environ.get("SOCKDRAWER_SOCK_HOST")
-    ZMQ_SOCKET_TYPE = os.environ.get("SOCKPUPPET_ZMQ_SOCKET_TYPE", "REQ")
-    ZMQ_CONNECT_ADDR = os.environ.get("SOCKPUPPET_ZMQ_CONNECT_ADDR")
+    ZMQ_SOCKET_TYPE = os.environ.get("SOCKDRAWER_ZMQ_SOCKET_TYPE", "REQ")
+    ZMQ_CONNECT_ADDR = os.environ.get("SOCKDRAWER_ZMQ_CONNECT_ADDR")
     SOCK_DIR = os.environ.get("SOCK_DIR", os.path.expanduser("~/code/Sock"))
     SOCK_MAIN_NAME = os.environ.get("SOCK_MAIN_NAME", "main.py")
     SOCK_TRAINED_MODEL_PATH = os.environ.get(
