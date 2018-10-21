@@ -26,3 +26,6 @@ simplejson==3.*
 # ZMQ
 pyzmq==17.*
 json-rpc==1.11.*
+
+# Health Checks
+requests==2.20.*
