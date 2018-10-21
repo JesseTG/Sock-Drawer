@@ -17,8 +17,10 @@ def load_secret(name: str, required=True) -> str:
     exists = os.path.exists(path)  # type: bool
 
     if (not exists) and required:
+        # If we don't have it but we need it...
         raise FileNotFoundError(f"File {path} not found")
     elif (not exists) and (not required):
+        # If we don't have it and we don't need it...
         return ""
 
     with open(path, "r") as secret:
