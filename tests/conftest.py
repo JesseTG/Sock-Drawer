@@ -69,32 +69,42 @@ def sockpuppet_server():
 
     context = Context.instance()  # type: Context
     socket = context.socket(zmq.REQ)  # type: Socket
-    socket.heartbeat_ivl = 2000
-    socket.heartbeat_timeout = 2000
-    socket.connect(TestConfig.SOCK_HOST)
-    process = subprocess.Popen(
-        (sys.executable, TestConfig.SOCK_MAIN_NAME),  # python main.py
-        env=env,
-        cwd=TestConfig.SOCK_DIR,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
 
-    ping = {
-        "jsonrpc": "2.0",
-        "id": randint(sockpuppet.utils.MIN_JSON_INT, sockpuppet.utils.MAX_JSON_INT),
-        "method": "ping"
-    }
-    socket.send_json(ping)
-    pong = socket.recv_json()
-    socket.close()
+    with context.socket(zmq.REQ) as socket:
+        socket.heartbeat_ivl = 2000
+        socket.heartbeat_timeout = 2000
+        socket.connect(TestConfig.SOCK_HOST)
 
-    assert isinstance(pong, Dict)
+        # Don't put process in a with statement; when exiting, it waits for the subprocess
+        # (and we don't want to do that, we want to kill it)
+        process = subprocess.Popen(
+            (sys.executable, TestConfig.SOCK_MAIN_NAME),  # python main.py
+            env=env,
+            cwd=TestConfig.SOCK_DIR,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
 
-    assert pong["jsonrpc"] == ping["jsonrpc"]
-    assert pong["id"] == ping["id"]
-    assert pong["result"] == "pong"
+        assert process is not None
+
+        ping = {
+            "jsonrpc": "2.0",
+            "id": randint(sockpuppet.utils.MIN_JSON_INT, sockpuppet.utils.MAX_JSON_INT),
+            "method": "ping"
+        }
+        socket.send_json(ping)
+
+        events = socket.poll(30 * 1000)
+        assert events > 0
+
+        pong = socket.recv_json()
+
+        assert isinstance(pong, Dict)
+
+        assert pong["jsonrpc"] == ping["jsonrpc"]
+        assert pong["id"] == ping["id"]
+        assert pong["result"] == "pong"
 
     yield process
 
