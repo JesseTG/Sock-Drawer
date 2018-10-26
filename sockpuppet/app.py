@@ -31,7 +31,8 @@ def create_app(config_object: Config=ProdConfig) -> FlaskApp:
         validate_responses=config_object.VALIDATE_RESPONSES,
         resolver_error=BadRequest
     )  # type: FlaskApi
-    app = connex.app
+    app = connex.app  # type: Flask
+    app.logger.setLevel(config_object.LOG_LEVEL)
 
     app.config.from_object(config_object)
     register_extensions(app, config_object)

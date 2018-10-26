@@ -71,7 +71,7 @@ class Config(object):
     )
 
     SOCK_TIMEOUT = int(os.environ.get("SOCKDRAWER_SOCK_TIMEOUT", 5000))
-
+    LOG_LEVEL = os.environ.get("SOCKDRAWER_LOG_LEVEL", "INFO")
     HEALTH_CHECK_HOST = os.environ.get("SOCKDRAWER_HEALTH_CHECK_HOST", "http://localhost")
     VALIDATE_RESPONSES = False
     MAX_URL_LENGTH = int(os.environ.get("SOCKDRAWER_MAX_URL_LENGTH", 1024))
