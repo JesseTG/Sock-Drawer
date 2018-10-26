@@ -4,19 +4,18 @@ from http import HTTPStatus
 from json import JSONEncoder
 from random import randint
 from typing import Sequence, Union
-import connexion
 
+import connexion
 import flask
 import zmq
-from flask import Blueprint, Flask, Response, Request, current_app, jsonify
-from flask_restful import Resource, fields, inputs, reqparse
-from twint import Config
-from twitter_scraper import get_tweets
-from werkzeug.exceptions import BadRequest, HTTPException
-from werkzeug.datastructures import MIMEAccept
-from jsonrpc.exceptions import JSONRPCInvalidParams, JSONRPCInternalError
 from connexion.exceptions import ProblemException
-
+from flask import Blueprint, Flask, Request, Response, current_app, jsonify
+from jsonrpc.exceptions import JSONRPCInternalError, JSONRPCInvalidParams
+from twitter_scraper import get_tweets
+from werkzeug.datastructures import MIMEAccept
+from werkzeug.exceptions import BadRequest, HTTPException
+import requests
+from requests import ConnectTimeout
 from sockpuppet.errors import BadCharacterError, EmptyNameError, SockPuppetError
 from sockpuppet.extensions import cache, zmq_socket
 
@@ -42,14 +41,13 @@ def user_or_id(name: str) -> Union[str, int]:
         # Prefix an all-digit username with @ to treat it as a name, not an id
 
 
-def parse_tweet_ids(arg: str) -> Sequence[int]:
-    return tuple(map(inputs.positive, arg.split(',')))
-
-
 def get_recent_tweets(user: str, limit: int) -> Sequence[str]:
 
+    app = current_app  # type: Flask
+    app.logger.info("Requesting up to %d tweets from %s", limit, user)
     tweets = tuple(t for t in get_tweets(user, pages=1))
     result = tuple(t["text"] for t in tweets)
+    app.logger.info("Got %d tweets from %s", len(result), user)
     # TODO: Doesn't distinguish between screen name and user id
 
     return result
@@ -126,6 +124,7 @@ def make_guess(ids: Sequence[str], response_id: int) -> Response:
     for i in ids:
         guess = None
         try:
+            # TODO: Must clean up this part
             tweets = get_recent_tweets(i, 20)  # type: Sequence[str]
             sock_request = {
                 "jsonrpc": "2.0",
@@ -133,8 +132,17 @@ def make_guess(ids: Sequence[str], response_id: int) -> Response:
                 "method": "guess",
                 "params": tweets
             }
+            app.logger.info("Sending request to Sock")
             zmq_socket.socket.send_json(sock_request)
+            app.logger.info("Sent request to Sock, awaiting response")
+
+            events = zmq_socket.socket.poll(app.config["SOCK_TIMEOUT"])
+
+            if events == 0:
+                raise TimeoutError(f"Failed to get response from model server within {app.config['SOCK_TIMEOUT']}ms")
+
             results = zmq_socket.socket.recv_json()  # type: Dict
+            app.logger.info("Got response from Sock")
 
             # TODO: Check for errors
             # TODO: Conform to the API I designed
@@ -152,6 +160,51 @@ def make_guess(ids: Sequence[str], response_id: int) -> Response:
                 type="user",
                 status=UNAVAILABLE
             )
+        except TimeoutError as e:
+            app.logger.error(e)
+            query_response = {
+                "jsonrpc": "2.0",
+                "id": response_id,
+                "error": {
+                    "code": 503,
+                    "message": "Failed to get response from model server"
+                }
+            }
+            response = jsonify(query_response)  # type: Response
+            response.status_code = HTTPStatus.GATEWAY_TIMEOUT
+            response.content_type = "application/json"
+
+            return response
+        except ConnectTimeout as e:
+            app.logger.error(e)
+            query_response = {
+                "jsonrpc": "2.0",
+                "id": response_id,
+                "error": {
+                    "code": 503,
+                    "message": "Failed to get response from Twitter in time"
+                }
+            }
+            response = jsonify(query_response)  # type: Response
+            response.status_code = HTTPStatus.GATEWAY_TIMEOUT
+            response.content_type = "application/json"
+
+            return response
+        except requests.ConnectionError as e:
+            app.logger.error(e)
+            query_response = {
+                "jsonrpc": "2.0",
+                "id": response_id,
+                "error": {
+                    "code": 504,
+                    "message": "Failed to connect to Twitter"
+                }
+            }
+            response = jsonify(query_response)  # type: Response
+            response.status_code = HTTPStatus.BAD_GATEWAY
+            response.content_type = "application/json"
+
+            return response
 
         guesses.append(guess)
 
@@ -171,7 +224,11 @@ def make_guess(ids: Sequence[str], response_id: int) -> Response:
 def get_user(ids: Sequence[str]) -> Response:
     response_id = randint(-((2**53) - 1), (2**53) - 1)
 
-    return make_guess(ids, response_id)
+    app = current_app  # type: Flask
+    app.logger.info("Received GET request for %s", ids)
+    guesses = make_guess(ids, response_id)
+    app.logger.info("Done")
+    return guesses
 
 
 def post_user() -> Response:
