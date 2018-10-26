@@ -41,6 +41,7 @@ class ZMQSocket(object):
         # TODO: Allow either an int or a string here
 
         socket.connect(app.config[f'{self.prefix}_CONNECT_ADDR'])
+        # TODO: Raise an exception if I don't have write permission on this socket (if it's a unix socket)
         # TODO: Set sockopts here
         return socket
 
@@ -48,6 +49,7 @@ class ZMQSocket(object):
         ctx = _app_ctx_stack.top
 
         if ctx is not None and hasattr(ctx, "zmq_socket"):
+            # TODO: Delete the socket once the app ends
             ctx.zmq_socket.close()
 
     @property
