@@ -30,7 +30,11 @@ pytest_plugins = 'pytester'
 def pytest_report_header(config, startdir):
 
     return (
-        ""
+        f"SOCK_TRAINED_MODEL_PATH: {TestConfig.SOCK_TRAINED_MODEL_PATH}",
+        f"SOCK_WORD_EMBEDDING_PATH: {TestConfig.SOCK_WORD_EMBEDDING_PATH}",
+        f"SOCK_HOST: {TestConfig.SOCK_HOST}",
+        f"SOCK_DIR: {TestConfig.SOCK_DIR}",
+        f"SOCK_MAIN_NAME: {TestConfig.SOCK_MAIN_NAME}",
     )
 
 
